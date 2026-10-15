@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import process from 'node:process';
 import chalk from 'chalk';
-import {CLIApplication, HelpCommand, ImportCommand, VersionCommand} from './cli/index.js';
+import {CLIApplication, GenerateCommand, HelpCommand, ImportCommand, VersionCommand} from './cli/index.js';
 
 const application = new CLIApplication();
-application.registerCommands([new HelpCommand(), new VersionCommand(), new ImportCommand()]);
+application.registerCommands([new HelpCommand(), new VersionCommand(), new ImportCommand(), new GenerateCommand()]);
 
 application.processCommand(process.argv.slice(2)).catch((error: Error) => {
   console.error(chalk.red(error.message));

@@ -1,0 +1,103 @@
+{
+  "api": {
+    "titles": [
+      "Bright apartment in Paris",
+      "Quiet house with a garden",
+      "Cozy room near the river",
+      "Modern hotel in the city center",
+      "Spacious apartment with a balcony",
+      "Comfortable studio near the park"
+    ],
+    "descriptions": [
+      "Comfortable apartment close to the city center and public transport.",
+      "Spacious house with a private garden and everything you need for your stay.",
+      "Enjoy a quiet room within walking distance of museums and local cafes.",
+      "A modern hotel with comfortable beds and a convenient location in the city.",
+      "A bright apartment with a sunny balcony, a kitchen and plenty of space.",
+      "A cozy studio next to the park, perfect for exploring the city on foot."
+    ],
+    "cities": [
+      {
+        "name": "Paris",
+        "coordinates": {
+          "latitude": 48.85661,
+          "longitude": 2.351499
+        }
+      },
+      {
+        "name": "Cologne",
+        "coordinates": {
+          "latitude": 50.938361,
+          "longitude": 6.959974
+        }
+      },
+      {
+        "name": "Brussels",
+        "coordinates": {
+          "latitude": 50.846557,
+          "longitude": 4.351697
+        }
+      },
+      {
+        "name": "Amsterdam",
+        "coordinates": {
+          "latitude": 52.370216,
+          "longitude": 4.895168
+        }
+      },
+      {
+        "name": "Hamburg",
+        "coordinates": {
+          "latitude": 53.550341,
+          "longitude": 10.000654
+        }
+      },
+      {
+        "name": "Dusseldorf",
+        "coordinates": {
+          "latitude": 51.225402,
+          "longitude": 6.776314
+        }
+      }
+    ],
+    "previewImages": [
+      "https://example.com/apartment-01.jpg",
+      "https://example.com/apartment-02.jpg",
+      "https://example.com/apartment-03.jpg",
+      "https://example.com/room.jpg",
+      "https://example.com/studio-01.jpg",
+      "https://example.com/hotel-01.jpg"
+    ],
+    "images": [
+      "https://example.com/interior-1.jpg",
+      "https://example.com/interior-2.jpg",
+      "https://example.com/interior-3.jpg",
+      "https://example.com/interior-4.jpg",
+      "https://example.com/interior-5.jpg",
+      "https://example.com/interior-6.jpg"
+    ],
+    "housingTypes": [
+      "apartment",
+      "house",
+      "room",
+      "hotel"
+    ],
+    "amenities": [
+      "Breakfast",
+      "Air conditioning",
+      "Laptop friendly workspace",
+      "Baby seat",
+      "Washer",
+      "Towels",
+      "Fridge"
+    ],
+    "authorEmails": [
+      "alice@example.com",
+      "bob@example.com",
+      "charlie@example.com",
+      "diana@example.com",
+      "eva@example.com",
+      "frank@example.com"
+    ]
+  }
+}
