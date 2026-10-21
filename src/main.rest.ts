@@ -1,17 +1,11 @@
 import 'reflect-metadata';
 import process from 'node:process';
-import {Container} from 'inversify';
-import {RestApplication} from './rest/index.js';
-import {Config, RestConfig, RestSchema} from './shared/libs/config/index.js';
-import {Logger, PinoLogger} from './shared/libs/logger/index.js';
+import {createRestApplicationContainer, RestApplication} from './rest/index.js';
+import {Logger} from './shared/libs/logger/index.js';
 import {Component} from './shared/types/index.js';
 
 function bootstrap(): void {
-  const container = new Container();
-  container.bind<RestApplication>(Component.RestApplication).to(RestApplication).inSingletonScope();
-  container.bind<Logger>(Component.Logger).to(PinoLogger).inSingletonScope();
-  container.bind<Config<RestSchema>>(Component.Config).to(RestConfig).inSingletonScope();
-
+  const container = createRestApplicationContainer();
   const logger = container.get<Logger>(Component.Logger);
 
   try {
