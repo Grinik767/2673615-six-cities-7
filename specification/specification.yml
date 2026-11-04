@@ -1,0 +1,699 @@
+openapi: 3.1.0
+info:
+  title: API сервер для проекта "Шесть городов".
+  description: |-
+    Список ресурсов и маршрутов сервера "Шесть городов".
+  version: 1.0.0
+
+servers:
+  - url: /
+    description: Текущий сервер API.
+
+tags:
+  - name: offers
+    description: Действия с предложениями по аренде.
+  - name: favorites
+    description: Действия с избранными предложениями пользователя.
+  - name: comments
+    description: Действия с комментариями.
+  - name: users
+    description: Действия с пользователями.
+
+paths:
+  /users/register:
+    post:
+      tags: [users]
+      summary: Регистрация пользователя
+      operationId: registerUser
+      description: |-
+        Email уникален.
+        Пароль хранится в виде хеша и не возвращается в ответе.
+        Аватар можно загрузить отдельным запросом после регистрации.
+        До загрузки аватара возвращается изображение по умолчанию.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createUser'
+      responses:
+        '201':
+          description: Пользователь зарегистрирован. Объект пользователя без пароля.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '409':
+          description: Пользователь с таким email уже существует.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+  /users/login:
+    post:
+      tags: [users]
+      summary: Авторизация пользователя
+      operationId: loginUser
+      description: Авторизует пользователя на основе логина и пароля.
+      responses:
+        '200':
+          description: Пользователь авторизован.
+    get:
+      tags: [users]
+      summary: Проверка состояния пользователя
+      operationId: checkUser
+      description: Возвращает информацию об авторизованном пользователе.
+      responses:
+        '200':
+          description: Информация об авторизованном пользователе.
+
+  /users/{userId}/avatar:
+    parameters:
+      - name: userId
+        in: path
+        required: true
+        description: Идентификатор пользователя.
+        schema:
+          $ref: '#/components/schemas/id'
+    post:
+      tags: [users]
+      summary: Загрузка аватара пользователя
+      operationId: uploadAvatar
+      description: Загружает аватар пользователя в формате .jpg или .png.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/uploadAvatar'
+            encoding:
+              avatar:
+                contentType: image/jpeg, image/png
+      responses:
+        '200':
+          description: Аватар загружен. Обновлённый объект пользователя.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/user'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          description: Пользователь не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+        '415':
+          description: Поддерживаются только изображения в формате .jpg и .png.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+  /offers:
+    get:
+      tags: [offers]
+      summary: Список предложений по аренде
+      operationId: getOffers
+      description: |-
+        Возвращает предложения по дате публикации по убыванию.
+        По умолчанию возвращается не больше 60 предложений.
+        Параметр limit позволяет запросить больше предложений.
+        Комментарии не включены, возвращается только их количество.
+      parameters:
+        - name: limit
+          in: query
+          description: Количество предложений в ответе.
+          schema:
+            type: integer
+            minimum: 1
+            default: 60
+      responses:
+        '200':
+          $ref: '#/components/responses/offerList'
+        '400':
+          $ref: '#/components/responses/validationError'
+    post:
+      tags: [offers]
+      summary: Создание предложения по аренде
+      operationId: createOffer
+      description: |-
+        Создаёт предложение после проверки данных.
+        Количество комментариев рассчитывается автоматически.
+        При ошибке валидации предложение не создаётся.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createOffer'
+      responses:
+        '201':
+          description: Предложение создано. Объект предложения.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/offer'
+        '400':
+          $ref: '#/components/responses/validationError'
+
+  /offers/premium:
+    get:
+      tags: [offers]
+      summary: Премиальные предложения для города
+      operationId: getPremiumOffers
+      description: Возвращает не больше трёх предложений с isPremium = true по дате публикации по убыванию.
+      parameters:
+        - name: city
+          in: query
+          required: true
+          description: Город, для которого запрашиваются премиальные предложения.
+          schema:
+            $ref: '#/components/schemas/city'
+      responses:
+        '200':
+          description: Список премиальных предложений без комментариев.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/premiumOfferList'
+        '400':
+          $ref: '#/components/responses/validationError'
+
+  /offers/favorites:
+    get:
+      tags: [favorites]
+      summary: Список избранных предложений
+      operationId: getFavoriteOffers
+      description: Возвращает все предложения, добавленные в избранное текущим пользователем.
+      responses:
+        '200':
+          $ref: '#/components/responses/offerList'
+
+  /offers/{offerId}:
+    parameters:
+      - $ref: '#/components/parameters/offerId'
+    get:
+      tags: [offers]
+      summary: Детальная информация о предложении
+      operationId: getOffer
+      description: Возвращает все поля предложения и количество комментариев. Сами комментарии не включены.
+      responses:
+        '200':
+          $ref: '#/components/responses/offer'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+    patch:
+      tags: [offers]
+      summary: Редактирование предложения по аренде
+      operationId: updateOffer
+      description: |-
+        Обновляет переданные поля после валидации.
+        При ошибке валидации предложение не изменяется.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/updateOffer'
+      responses:
+        '200':
+          $ref: '#/components/responses/offer'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+    delete:
+      tags: [offers]
+      summary: Удаление предложения по аренде
+      operationId: deleteOffer
+      description: Удаляет предложение и все комментарии к нему.
+      responses:
+        '204':
+          description: Предложение и комментарии удалены. Тело ответа отсутствует.
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+
+  /offers/{offerId}/comments:
+    parameters:
+      - $ref: '#/components/parameters/offerId'
+    get:
+      tags: [comments]
+      summary: Список комментариев к предложению
+      operationId: getComments
+      description: Возвращает не больше 50 последних комментариев по дате публикации по убыванию.
+      responses:
+        '200':
+          description: Список комментариев.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/commentList'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+    post:
+      tags: [comments]
+      summary: Добавление комментария
+      operationId: createComment
+      description: |-
+        Создаёт комментарий после проверки данных. Дату публикации и автора
+        определяет сервер. Автором становится текущий пользователь.
+        Редактирование и удаление комментариев не предусмотрены.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/createComment'
+      responses:
+        '201':
+          description: Комментарий создан. Объект комментария.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/comment'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+
+  /offers/{offerId}/favorite:
+    parameters:
+      - $ref: '#/components/parameters/offerId'
+    post:
+      tags: [favorites]
+      summary: Добавление предложения в избранное
+      operationId: addFavoriteOffer
+      description: Добавляет любое существующее предложение в избранное текущего пользователя.
+      responses:
+        '200':
+          $ref: '#/components/responses/offer'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+    delete:
+      tags: [favorites]
+      summary: Удаление предложения из избранного
+      operationId: deleteFavoriteOffer
+      description: Удаляет предложение из избранного текущего пользователя.
+      responses:
+        '200':
+          $ref: '#/components/responses/offer'
+        '400':
+          $ref: '#/components/responses/validationError'
+        '404':
+          $ref: '#/components/responses/offerNotFound'
+
+components:
+  parameters:
+    offerId:
+      name: offerId
+      in: path
+      required: true
+      description: Идентификатор предложения по аренде.
+      schema:
+        $ref: '#/components/schemas/id'
+
+  responses:
+    validationError:
+      description: Ошибка валидации тела запроса, параметров пути или строки запроса.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    offerNotFound:
+      description: Предложение с указанным идентификатором не найдено.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error'
+    offer:
+      description: Объект предложения без списка комментариев.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/offer'
+    offerList:
+      description: Список предложений с краткой информацией без списка комментариев.
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/offerPreview'
+
+  schemas:
+    uploadAvatar:
+      type: object
+      required: [avatar]
+      properties:
+        avatar:
+          type: string
+          format: binary
+          description: Изображение в формате .jpg или .png.
+
+    premiumOfferList:
+      type: array
+      maxItems: 3
+      items:
+        $ref: '#/components/schemas/offerPreview'
+
+    commentList:
+      type: array
+      maxItems: 50
+      items:
+        $ref: '#/components/schemas/comment'
+
+    id:
+      type: string
+      description: Идентификатор документа MongoDB.
+      pattern: '^[a-fA-F0-9]{24}$'
+      example: 6329c3d6a04ab1061c6425ea
+
+    createUser:
+      type: object
+      required: [name, email, password, type]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 15
+          example: Keks
+        email:
+          type: string
+          format: email
+          example: keks@htmlacademy.ru
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 6
+          maxLength: 12
+          example: secret123
+        type:
+          $ref: '#/components/schemas/userType'
+
+    userType:
+      type: string
+      description: Тип пользователя — обычный или pro.
+      enum: [regular, pro]
+      example: regular
+
+    user:
+      type: object
+      required: [id, name, email, avatar, type]
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 15
+          example: Keks
+        email:
+          type: string
+          format: email
+          example: keks@htmlacademy.ru
+        avatar:
+          type: string
+          description: Ссылка на аватар. Если аватар не загружен, возвращается изображение по умолчанию.
+          example: /static/default-avatar.png
+        type:
+          $ref: '#/components/schemas/userType'
+
+    city:
+      type: string
+      enum: [Paris, Cologne, Brussels, Amsterdam, Hamburg, Dusseldorf]
+      description: |-
+        Один из шести городов. Координаты центров городов (latitude, longitude):
+        Paris — 48.85661, 2.351499;
+        Cologne — 50.938361, 6.959974;
+        Brussels — 50.846557, 4.351697;
+        Amsterdam — 52.370216, 4.895168;
+        Hamburg — 53.550341, 10.000654;
+        Dusseldorf — 51.225402, 6.776314.
+      example: Paris
+
+    housingType:
+      type: string
+      enum: [apartment, house, room, hotel]
+      example: apartment
+
+    amenity:
+      type: string
+      enum:
+        - Breakfast
+        - Air conditioning
+        - Laptop friendly workspace
+        - Baby seat
+        - Washer
+        - Towels
+        - Fridge
+      example: Breakfast
+
+    coordinates:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+          example: 48.85661
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+          example: 2.351499
+
+    offerPreview:
+      type: object
+      required:
+        - id
+        - price
+        - title
+        - housingType
+        - isFavorite
+        - publicationDate
+        - city
+        - previewImage
+        - isPremium
+        - rating
+        - commentCount
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        price:
+          type: number
+          minimum: 100
+          maximum: 100000
+          example: 250
+        title:
+          type: string
+          minLength: 10
+          maxLength: 100
+          example: Уютная квартира в центре Парижа
+        housingType:
+          $ref: '#/components/schemas/housingType'
+        isFavorite:
+          type: boolean
+          description: Принадлежность к списку избранных предложений пользователя.
+          example: false
+        publicationDate:
+          type: string
+          format: date-time
+          example: '2026-11-04T08:00:00.000Z'
+        city:
+          $ref: '#/components/schemas/city'
+        previewImage:
+          type: string
+          format: uri
+          example: https://example.com/apartment-preview.jpg
+        isPremium:
+          type: boolean
+          example: true
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+          multipleOf: 0.1
+          example: 4.5
+        commentCount:
+          type: integer
+          minimum: 0
+          readOnly: true
+          description: Рассчитывается автоматически.
+          example: 3
+
+    offerFields:
+      type: object
+      description: Поля предложения, передаваемые при создании и редактировании.
+      properties:
+        title:
+          $ref: '#/components/schemas/offerPreview/properties/title'
+        description:
+          type: string
+          minLength: 20
+          maxLength: 1024
+          example: Светлая квартира с удобной кухней и видом на тихую улицу.
+        publicationDate:
+          $ref: '#/components/schemas/offerPreview/properties/publicationDate'
+        city:
+          $ref: '#/components/schemas/city'
+        previewImage:
+          $ref: '#/components/schemas/offerPreview/properties/previewImage'
+        images:
+          type: array
+          minItems: 6
+          maxItems: 6
+          items:
+            type: string
+            format: uri
+          example:
+            - https://example.com/apartment-1.jpg
+            - https://example.com/apartment-2.jpg
+            - https://example.com/apartment-3.jpg
+            - https://example.com/apartment-4.jpg
+            - https://example.com/apartment-5.jpg
+            - https://example.com/apartment-6.jpg
+        isPremium:
+          $ref: '#/components/schemas/offerPreview/properties/isPremium'
+        isFavorite:
+          $ref: '#/components/schemas/offerPreview/properties/isFavorite'
+        rating:
+          $ref: '#/components/schemas/offerPreview/properties/rating'
+        housingType:
+          $ref: '#/components/schemas/housingType'
+        rooms:
+          type: integer
+          minimum: 1
+          maximum: 8
+          example: 2
+        guests:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 4
+        price:
+          $ref: '#/components/schemas/offerPreview/properties/price'
+        amenities:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/amenity'
+          example: [Breakfast, Washer, Towels]
+        coordinates:
+          $ref: '#/components/schemas/coordinates'
+
+    createOffer:
+      allOf:
+        - $ref: '#/components/schemas/offerFields'
+        - type: object
+          required:
+            - title
+            - description
+            - publicationDate
+            - city
+            - previewImage
+            - images
+            - isPremium
+            - isFavorite
+            - rating
+            - housingType
+            - rooms
+            - guests
+            - price
+            - amenities
+            - author
+            - coordinates
+          properties:
+            author:
+              $ref: '#/components/schemas/id'
+              description: Идентификатор автора предложения.
+
+    updateOffer:
+      description: Передаются только изменяемые поля предложения. Все поля необязательные, но запрос не должен быть пустым.
+      allOf:
+        - $ref: '#/components/schemas/offerFields'
+        - type: object
+          minProperties: 1
+          properties:
+            author:
+              $ref: '#/components/schemas/id'
+              description: Идентификатор автора предложения.
+
+    offer:
+      allOf:
+        - $ref: '#/components/schemas/offerPreview'
+        - $ref: '#/components/schemas/offerFields'
+        - type: object
+          required: [description, images, rooms, guests, amenities, author, coordinates]
+          properties:
+            author:
+              $ref: '#/components/schemas/user'
+
+    createComment:
+      type: object
+      description: Дата публикации и автор комментария определяются сервером и не передаются в запросе.
+      required: [text, rating]
+      properties:
+        text:
+          type: string
+          minLength: 5
+          maxLength: 1024
+          example: Отличная квартира, всё соответствует описанию.
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+          example: 5
+
+    comment:
+      allOf:
+        - $ref: '#/components/schemas/createComment'
+        - type: object
+          required: [id, publicationDate, author]
+          properties:
+            id:
+              $ref: '#/components/schemas/id'
+            publicationDate:
+              type: string
+              format: date-time
+              readOnly: true
+              example: '2026-11-04T09:00:00.000Z'
+            author:
+              $ref: '#/components/schemas/user'
+
+    error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Предложение не найдено
+        details:
+          type: array
+          description: Список ошибок валидации по полям, если они есть.
+          items:
+            type: object
+            properties:
+              property:
+                type: string
+                example: title
+              messages:
+                type: array
+                items:
+                  type: string
+                example:
+                  - title must be longer than or equal to 10 characters
