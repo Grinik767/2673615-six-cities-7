@@ -14,7 +14,7 @@ export class HelpCommand implements Command {
 Команды:
   --version                    выводит номер версии
   --help                       печатает этот текст
-  --import <path>              читает предложения из TSV и выводит их в консоль
+  --import <path> <uri> <salt>  сохраняет предложения из TSV в MongoDB
   --generate <n> <path> <url>   создаёт TSV с тестовыми данными`));
   }
 }

@@ -1,22 +1,34 @@
-import {once} from 'node:events';
 import chalk from 'chalk';
 import {LineProcessedCallback, TSVFileReader} from '../../shared/libs/file-reader/index.js';
 import {parseOffer} from '../../shared/libs/file-reader/offer-parser.js';
 import {getErrorMessage} from '../../shared/helpers/index.js';
 import {Command} from './command.interface.js';
+import {MongoDatabaseClient} from '../../shared/libs/database-client/index.js';
+import {PinoLogger} from '../../shared/libs/logger/index.js';
+import {DefaultUserService, UserModel} from '../../shared/modules/user/index.js';
+import {DefaultOfferService, OfferModel} from '../../shared/modules/offer/index.js';
+import {DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD, DEFAULT_USER_TYPE} from './command.constant.js';
 
 export class ImportCommand implements Command {
+  private readonly logger = new PinoLogger();
+  private readonly databaseClient = new MongoDatabaseClient(this.logger);
+  private readonly userService = new DefaultUserService(this.logger, UserModel);
+  private readonly offerService = new DefaultOfferService(this.logger, OfferModel);
+
   public getName(): string {
     return '--import';
   }
 
-  private async onLine(line: string, lineNumber: number, done: LineProcessedCallback): Promise<void> {
+  private async onLine(salt: string, line: string, _lineNumber: number, done: LineProcessedCallback): Promise<void> {
     try {
       const offer = parseOffer(line);
-      const output = `${chalk.cyan(`Предложение (строка ${lineNumber}):`)}\n${JSON.stringify(offer, null, 2)}\n`;
-      if (!process.stdout.write(output)) {
-        await once(process.stdout, 'drain');
-      }
+      const user = await this.userService.findOrCreate({
+        name: DEFAULT_USER_NAME,
+        email: offer.author,
+        password: DEFAULT_USER_PASSWORD,
+        type: DEFAULT_USER_TYPE,
+      }, salt);
+      await this.offerService.create({...offer, author: user.id});
       done();
     } catch (error) {
       done(new Error(getErrorMessage(error)));
@@ -28,13 +40,19 @@ export class ImportCommand implements Command {
   }
 
   public async execute(...parameters: string[]): Promise<void> {
-    const [filename] = parameters;
-    if (parameters.length !== 1 || !filename) {
-      throw new Error('Укажите путь к TSV-файлу: --import <filepath>');
+    const [filename, uri, salt] = parameters;
+    if (parameters.length !== 3 || !filename?.trim() || !uri?.trim() || !salt?.trim()) {
+      throw new Error('Укажите TSV-файл, URI MongoDB и соль: --import <filepath> <mongodb-uri> <salt>');
     }
     const fileReader = new TSVFileReader(filename);
-    fileReader.on('line', this.onLine.bind(this));
+    fileReader.on('line', this.onLine.bind(this, salt));
     fileReader.on('end', this.onComplete.bind(this));
-    await fileReader.read();
+    try {
+      await this.databaseClient.connect(uri);
+      await UserModel.init();
+      await fileReader.read();
+    } finally {
+      await this.databaseClient.disconnect();
+    }
   }
 }
