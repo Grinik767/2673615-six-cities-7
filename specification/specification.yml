@@ -525,9 +525,11 @@ components:
           example: true
         rating:
           type: number
-          minimum: 1
+          minimum: 0
           maximum: 5
           multipleOf: 0.1
+          readOnly: true
+          description: Средняя оценка по всем комментариям, округлённая до одного знака. До первого комментария — 0.
           example: 4.5
         commentCount:
           type: integer
@@ -569,10 +571,6 @@ components:
             - https://example.com/apartment-6.jpg
         isPremium:
           $ref: '#/components/schemas/offerPreview/properties/isPremium'
-        isFavorite:
-          $ref: '#/components/schemas/offerPreview/properties/isFavorite'
-        rating:
-          $ref: '#/components/schemas/offerPreview/properties/rating'
         housingType:
           $ref: '#/components/schemas/housingType'
         rooms:
@@ -609,8 +607,6 @@ components:
             - previewImage
             - images
             - isPremium
-            - isFavorite
-            - rating
             - housingType
             - rooms
             - guests
@@ -629,10 +625,6 @@ components:
         - $ref: '#/components/schemas/offerFields'
         - type: object
           minProperties: 1
-          properties:
-            author:
-              $ref: '#/components/schemas/id'
-              description: Идентификатор автора предложения.
 
     offer:
       allOf:

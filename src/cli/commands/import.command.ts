@@ -7,13 +7,14 @@ import {MongoDatabaseClient} from '../../shared/libs/database-client/index.js';
 import {PinoLogger} from '../../shared/libs/logger/index.js';
 import {DefaultUserService, UserModel} from '../../shared/modules/user/index.js';
 import {DefaultOfferService, OfferModel} from '../../shared/modules/offer/index.js';
+import {CommentModel} from '../../shared/modules/comment/index.js';
 import {DEFAULT_USER_NAME, DEFAULT_USER_PASSWORD, DEFAULT_USER_TYPE} from './command.constant.js';
 
 export class ImportCommand implements Command {
   private readonly logger = new PinoLogger();
   private readonly databaseClient = new MongoDatabaseClient(this.logger);
-  private readonly userService = new DefaultUserService(this.logger, UserModel);
-  private readonly offerService = new DefaultOfferService(this.logger, OfferModel);
+  private readonly userService = new DefaultUserService(this.logger, UserModel, OfferModel);
+  private readonly offerService = new DefaultOfferService(this.logger, OfferModel, CommentModel, UserModel);
 
   public getName(): string {
     return '--import';

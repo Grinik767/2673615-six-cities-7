@@ -5,6 +5,7 @@ import {Component} from '../shared/types/index.js';
 import {DatabaseClient, MongoDatabaseClient} from '../shared/libs/database-client/index.js';
 import {createUserContainer} from '../shared/modules/user/index.js';
 import {createOfferContainer} from '../shared/modules/offer/index.js';
+import {createCommentContainer} from '../shared/modules/comment/index.js';
 import {RestApplication} from './rest.application.js';
 
 export function createRestApplicationContainer(): interfaces.Container {
@@ -14,5 +15,5 @@ export function createRestApplicationContainer(): interfaces.Container {
   container.bind<Config<RestSchema>>(Component.Config).to(RestConfig).inSingletonScope();
   container.bind<DatabaseClient>(Component.DatabaseClient).to(MongoDatabaseClient).inSingletonScope();
 
-  return Container.merge(container, createUserContainer(), createOfferContainer());
+  return Container.merge(container, createUserContainer(), createOfferContainer(), createCommentContainer());
 }

@@ -1,6 +1,6 @@
 import {Amenity, City, Coordinates, HousingType, Offer} from '../../../types/index.js';
 
-export class CreateOfferDto implements Omit<Offer, 'commentCount'> {
+export class CreateOfferDto implements Omit<Offer, 'commentCount' | 'rating' | 'isFavorite'> {
   public title!: string;
   public description!: string;
   public publicationDate!: Date;
@@ -8,8 +8,6 @@ export class CreateOfferDto implements Omit<Offer, 'commentCount'> {
   public previewImage!: string;
   public images!: string[];
   public isPremium!: boolean;
-  public isFavorite!: boolean;
-  public rating!: number;
   public housingType!: HousingType;
   public rooms!: number;
   public guests!: number;
