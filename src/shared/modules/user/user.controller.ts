@@ -1,0 +1,52 @@
+import {inject, injectable} from 'inversify';
+import {Request, Response} from 'express';
+import {StatusCodes} from 'http-status-codes';
+import {BaseController, HttpError, HttpMethod} from '../../libs/rest/index.js';
+import {Logger} from '../../libs/logger/index.js';
+import {Config, RestSchema} from '../../libs/config/index.js';
+import {Component} from '../../types/index.js';
+import {fillDTO} from '../../helpers/index.js';
+import {UserService} from './user-service.interface.js';
+import {CreateUserRequest} from './create-user-request.type.js';
+import {LoginUserRequest} from './login-user-request.type.js';
+import {UserRdo} from './rdo/user.rdo.js';
+
+@injectable()
+export class UserController extends BaseController {
+  constructor(
+    @inject(Component.Logger) protected readonly logger: Logger,
+    @inject(Component.UserService) private readonly userService: UserService,
+    @inject(Component.Config) private readonly config: Config<RestSchema>,
+  ) {
+    super(logger);
+    this.addRoute({path: '/register', method: HttpMethod.Post, handler: this.create});
+    this.addRoute({path: '/login', method: HttpMethod.Post, handler: this.login});
+    this.addRoute({path: '/login', method: HttpMethod.Get, handler: this.check});
+    this.addRoute({path: '/:userId/avatar', method: HttpMethod.Post, handler: this.uploadAvatar});
+  }
+
+  public async create({body}: CreateUserRequest, res: Response): Promise<void> {
+    if (await this.userService.findByEmail(body.email)) {
+      throw new HttpError(StatusCodes.CONFLICT, `User with email «${body.email}» exists.`, 'UserController');
+    }
+
+    const user = await this.userService.create(body, this.config.get('SALT'));
+    this.created(res, fillDTO(UserRdo, user.toObject({virtuals: true})));
+  }
+
+  public async login({body}: LoginUserRequest, _res: Response): Promise<void> {
+    if (!await this.userService.findByEmail(body.email)) {
+      throw new HttpError(StatusCodes.UNAUTHORIZED, `User with email «${body.email}» not found.`, 'UserController');
+    }
+
+    throw new HttpError(StatusCodes.NOT_IMPLEMENTED, 'Not implemented', 'UserController');
+  }
+
+  public check(_req: Request, _res: Response): void {
+    throw new HttpError(StatusCodes.NOT_IMPLEMENTED, 'Not implemented', 'UserController');
+  }
+
+  public uploadAvatar(_req: Request, _res: Response): void {
+    throw new HttpError(StatusCodes.NOT_IMPLEMENTED, 'Not implemented', 'UserController');
+  }
+}

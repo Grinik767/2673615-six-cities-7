@@ -7,6 +7,7 @@ import {createUserContainer} from '../shared/modules/user/index.js';
 import {createOfferContainer} from '../shared/modules/offer/index.js';
 import {createCommentContainer} from '../shared/modules/comment/index.js';
 import {RestApplication} from './rest.application.js';
+import {AppExceptionFilter, ExceptionFilter} from '../shared/libs/rest/index.js';
 
 export function createRestApplicationContainer(): interfaces.Container {
   const container = new Container();
@@ -14,6 +15,7 @@ export function createRestApplicationContainer(): interfaces.Container {
   container.bind<Logger>(Component.Logger).to(PinoLogger).inSingletonScope();
   container.bind<Config<RestSchema>>(Component.Config).to(RestConfig).inSingletonScope();
   container.bind<DatabaseClient>(Component.DatabaseClient).to(MongoDatabaseClient).inSingletonScope();
+  container.bind<ExceptionFilter>(Component.ExceptionFilter).to(AppExceptionFilter).inSingletonScope();
 
   return Container.merge(container, createUserContainer(), createOfferContainer(), createCommentContainer());
 }

@@ -23,7 +23,7 @@ export class DefaultOfferService implements OfferService {
   public async create(dto: CreateOfferDto): Promise<DocumentType<OfferEntity>> {
     const result = await this.offerModel.create({...dto, rating: 0, commentCount: 0});
     this.logger.info(`New offer created: ${result.id}`);
-    return result;
+    return result.populate('author');
   }
 
   public async findById(id: string): Promise<DocumentType<OfferEntity> | null> {
@@ -47,7 +47,25 @@ export class DefaultOfferService implements OfferService {
   }
 
   public async updateById(id: string, dto: UpdateOfferDto): Promise<DocumentType<OfferEntity> | null> {
-    return this.offerModel.findByIdAndUpdate(id, {$set: dto}, {new: true})
+    const editableFields: UpdateOfferDto = {
+      title: dto.title,
+      description: dto.description,
+      publicationDate: dto.publicationDate,
+      city: dto.city,
+      previewImage: dto.previewImage,
+      images: dto.images,
+      isPremium: dto.isPremium,
+      housingType: dto.housingType,
+      rooms: dto.rooms,
+      guests: dto.guests,
+      price: dto.price,
+      amenities: dto.amenities,
+      coordinates: dto.coordinates,
+    };
+    const update = Object.fromEntries(
+      Object.entries(editableFields).filter(([, value]) => value !== undefined)
+    );
+    return this.offerModel.findByIdAndUpdate(id, {$set: update}, {new: true})
       .populate('author')
       .exec();
   }

@@ -266,8 +266,8 @@ paths:
       summary: Добавление комментария
       operationId: createComment
       description: |-
-        Создаёт комментарий после проверки данных. Дату публикации и автора
-        определяет сервер. Автором становится текущий пользователь.
+        Создаёт комментарий после проверки данных. Дату публикации определяет сервер.
+        Автор передаётся в теле запроса как идентификатор пользователя.
         Редактирование и удаление комментариев не предусмотрены.
       requestBody:
         required: true
@@ -638,8 +638,8 @@ components:
 
     createComment:
       type: object
-      description: Дата публикации и автор комментария определяются сервером и не передаются в запросе.
-      required: [text, rating]
+      description: Автор передаётся как идентификатор пользователя. Дата публикации определяется сервером и не передаётся в запросе.
+      required: [text, rating, author]
       properties:
         text:
           type: string
@@ -651,22 +651,27 @@ components:
           minimum: 1
           maximum: 5
           example: 5
+        author:
+          $ref: '#/components/schemas/id'
+          description: Идентификатор автора комментария.
 
     comment:
-      allOf:
-        - $ref: '#/components/schemas/createComment'
-        - type: object
-          required: [id, publicationDate, author]
-          properties:
-            id:
-              $ref: '#/components/schemas/id'
-            publicationDate:
-              type: string
-              format: date-time
-              readOnly: true
-              example: '2026-11-04T09:00:00.000Z'
-            author:
-              $ref: '#/components/schemas/user'
+      type: object
+      required: [id, text, rating, publicationDate, author]
+      properties:
+        id:
+          $ref: '#/components/schemas/id'
+        text:
+          $ref: '#/components/schemas/createComment/properties/text'
+        rating:
+          $ref: '#/components/schemas/createComment/properties/rating'
+        publicationDate:
+          type: string
+          format: date-time
+          readOnly: true
+          example: '2026-11-04T09:00:00.000Z'
+        author:
+          $ref: '#/components/schemas/user'
 
     error:
       type: object
